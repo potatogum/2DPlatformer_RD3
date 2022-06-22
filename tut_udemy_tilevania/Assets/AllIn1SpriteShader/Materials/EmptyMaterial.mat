@@ -9,12 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: EmptyMaterial
   m_Shader: {fileID: 4800000, guid: a36b7719ff0465b42ab1407d67672c5f, type: 3}
-  m_ValidKeywords:
-  - DISTORT_ON
-  - DOODLE_ON
-  - FADE_ON
-  - HOLOGRAM_ON
-  - INNEROUTLINE_ON
+  m_ValidKeywords: []
   m_InvalidKeywords:
   - ETC1_EXTERNAL_ALPHA
   m_LightmapFlags: 4
@@ -138,8 +133,8 @@ Material:
     - _GreyscaleBlend: 1
     - _GreyscaleLuminosity: 0
     - _GreyscaleOutline: 0
-    - _HandDrawnAmount: 8.7
-    - _HandDrawnSpeed: 3.22
+    - _HandDrawnAmount: 7.8
+    - _HandDrawnSpeed: 1
     - _HitEffectBlend: 1
     - _HitEffectGlow: 5
     - _HologramBlend: 1
