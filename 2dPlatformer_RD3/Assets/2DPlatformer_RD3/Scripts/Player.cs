@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
+using TarodevController;
 
 public class Player : MonoBehaviour
 {
@@ -30,7 +31,10 @@ public class Player : MonoBehaviour
     private float playerGravity;
     private float currentJumpTime;
 
+    private SpriteRenderer spriteRenderer;
 
+    // import TarodevController to use this
+    private PlayerInput input;
 
     private void Start()
     {
@@ -38,6 +42,8 @@ public class Player : MonoBehaviour
         animator = GetComponent<Animator>();
         bodyCollider = GetComponent<PolygonCollider2D>();
         playerGravity = rigidBody.gravityScale;
+        input = GetComponent<PlayerInput>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void Update()
@@ -58,7 +64,9 @@ public class Player : MonoBehaviour
     /// </summary>
     private void Run()
     {
-        float horizontalInput = CrossPlatformInputManager.GetAxis("Horizontal"); // value between -1 and 1
+        //float horizontalInput = CrossPlatformInputManager.GetAxis("Horizontal"); // value between -1 and 1
+        float horizontalInput = input.GatherInput().X; // value between -1 and 1
+
         rigidBody.velocity = new Vector2(horizontalInput*runSpeed, rigidBody.velocity.y);
 
         bool isMovingHorizontally = Mathf.Abs(rigidBody.velocity.x) > Mathf.Epsilon;
@@ -69,12 +77,14 @@ public class Player : MonoBehaviour
     {
         //if (!feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))  return;
 
-        if (CrossPlatformInputManager.GetButtonDown("Jump") && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
+        //if (CrossPlatformInputManager.GetButtonDown("Jump") && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
+        if (input.GatherInput().JumpDown && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
         {
             rigidBody.velocity += new Vector2(0, jumpSpeed);
             currentJumpTime = jumpTime;
         }
-        else if(rigidBody.velocity.y > 0 && !Input.GetButton("Jump"))
+        //else if(rigidBody.velocity.y > 0 && !Input.GetButton("Jump"))
+        else if(rigidBody.velocity.y > 0 && !input.GatherInput().JumpHeld)
         {
             rigidBody.gravityScale = gravity * jumpStopForce;
         }
@@ -95,7 +105,8 @@ public class Player : MonoBehaviour
         }
         
         animator.SetBool("OnLadder", true);
-        float verticalMoveDirection = Input.GetAxisRaw("Vertical");
+        //float verticalMoveDirection = Input.GetAxisRaw("Vertical");
+        float verticalMoveDirection = input.GatherInput().Y;
         if (verticalMoveDirection != 0)
         {
             if (verticalMoveDirection < 0 && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
@@ -120,10 +131,18 @@ public class Player : MonoBehaviour
     /// </summary> 
     private void FlipSprite()
     {
-        bool isMovingHorizontally = Mathf.Abs(rigidBody.velocity.x) > Mathf.Epsilon;
+        /*bool isMovingHorizontally = Mathf.Abs(rigidBody.velocity.x) > Mathf.Epsilon;
         if (isMovingHorizontally)
         {
             transform.localScale = new Vector2(Mathf.Sign(rigidBody.velocity.x), 1f);
+        }*/
+        if (rigidBody.velocity.x < 0)
+        {
+            spriteRenderer.flipX = true;
+        }
+        else if (rigidBody.velocity.x > 0)
+        {
+            spriteRenderer.flipX = false;
         }
     }
 
