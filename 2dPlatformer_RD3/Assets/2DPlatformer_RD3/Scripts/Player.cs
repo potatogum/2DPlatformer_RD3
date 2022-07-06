@@ -11,9 +11,12 @@ public class Player : MonoBehaviour
     [SerializeField] private float jumpSpeed = 5f;
     [SerializeField] private float jumpTime = 1f;
     [SerializeField] private float jumpStopForce = 2.5f;
+    [SerializeField] private float coyoteTime = 0.1f;
+    [SerializeField] private float jumpBufferTime = 0.1f;
     [SerializeField] private float climbSpeed = 3f;
-    [SerializeField] private float gravity = 3.5f;
+    //[SerializeField] private float gravity = 3.5f;
     [SerializeField] private Vector2 knockBackForce = new Vector2(10f, 15f);
+
 
     // State
     private bool isAlive = true;
@@ -25,24 +28,25 @@ public class Player : MonoBehaviour
     //Trigger colliders
     [SerializeField] private Collider2D feetCollider;
     [SerializeField] private Collider2D headCollider;
+    [SerializeField] private Transform groundCheck;
     //[SerializeField] private Collider2D frontCollider;
     //[SerializeField] private Collider2D behindCollider;
 
-    private float playerGravity;
+    //private float playerGravity;
     private float currentJumpTime;
+    private float coyoteTimeCounter;
+    private float jumpBufferCounter;
+    private bool isGrounded = false;
+    private bool isBufferJumping;
 
     private SpriteRenderer spriteRenderer;
-
-    // import TarodevController to use this
-    private PlayerInput input;
 
     private void Start()
     {
         rigidBody = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         bodyCollider = GetComponent<PolygonCollider2D>();
-        playerGravity = rigidBody.gravityScale;
-        input = GetComponent<PlayerInput>();
+        //playerGravity = rigidBody.gravityScale;
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
@@ -55,8 +59,9 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {
         Run();
-        Climb();
+        //Climb();
         FlipSprite();
+        
     }
 
     /// <summary>
@@ -64,8 +69,8 @@ public class Player : MonoBehaviour
     /// </summary>
     private void Run()
     {
-        //float horizontalInput = CrossPlatformInputManager.GetAxis("Horizontal"); // value between -1 and 1
-        float horizontalInput = input.GatherInput().X; // value between -1 and 1
+        //TODO: Use only GetAxis when in air and changing direction!
+        float horizontalInput = IsGrounded() ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
 
         rigidBody.velocity = new Vector2(horizontalInput*runSpeed, rigidBody.velocity.y);
 
@@ -75,15 +80,48 @@ public class Player : MonoBehaviour
 
     private void Jump()
     {
-        //if (!feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))  return;
-
-        //if (CrossPlatformInputManager.GetButtonDown("Jump") && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
-        if (input.GatherInput().JumpDown && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
+        if (IsGrounded())
         {
+            coyoteTimeCounter = coyoteTime;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
+        }
+
+        if (Input.GetButtonDown("Jump")) 
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
+
+        if (coyoteTimeCounter > 0f && jumpBufferCounter > 0f && !isBufferJumping)
+        {
+            rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpSpeed);
+
+            jumpBufferCounter = 0f;
+
+            StartCoroutine(BufferJumpCooldown());
+        }
+
+        if (Input.GetButtonUp("Jump") && rigidBody.velocity.y > 0f)
+        {
+            rigidBody.velocity = new Vector2(rigidBody.velocity.x, rigidBody.velocity.y * 0.5f);
+
+            coyoteTimeCounter = 0f;
+        }
+        /*
+        if (input.GatherInput().JumpDown && isGrounded)
+        {
+            rigidBody.gravityScale = 0;
+            coyoteCounter = 0;
             rigidBody.velocity += new Vector2(0, jumpSpeed);
+ 
             currentJumpTime = jumpTime;
         }
-        //else if(rigidBody.velocity.y > 0 && !Input.GetButton("Jump"))
         else if(rigidBody.velocity.y > 0 && !input.GatherInput().JumpHeld)
         {
             rigidBody.gravityScale = gravity * jumpStopForce;
@@ -92,6 +130,19 @@ public class Player : MonoBehaviour
         {
             rigidBody.gravityScale = gravity;
         }
+        */
+    }
+
+    private bool IsGrounded()
+    {
+        return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
+    }
+
+    private IEnumerator BufferJumpCooldown()
+    {
+        isBufferJumping = true;
+        yield return new WaitForSeconds(0.4f);
+        isBufferJumping = false;
     }
 
     private void Climb()
@@ -105,8 +156,7 @@ public class Player : MonoBehaviour
         }
         
         animator.SetBool("OnLadder", true);
-        //float verticalMoveDirection = Input.GetAxisRaw("Vertical");
-        float verticalMoveDirection = input.GatherInput().Y;
+        float verticalMoveDirection = Input.GetAxisRaw("Vertical");
         if (verticalMoveDirection != 0)
         {
             if (verticalMoveDirection < 0 && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
