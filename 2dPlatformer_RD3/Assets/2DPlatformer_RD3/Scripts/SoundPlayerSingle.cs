@@ -24,8 +24,8 @@ public class SoundPlayerSingle: MonoBehaviour
     private void OnTriggerEnter2D(Collider2D collision)
     {
         // There are more than 1 collider on the player, we want the bodyCollider (polygon)
-        if (collision is PolygonCollider2D)
-        {
+        //if (collision is PolygonCollider2D)
+        //{
             PlaySound();
 
             if (disableOnTouch)
@@ -38,7 +38,7 @@ public class SoundPlayerSingle: MonoBehaviour
                 }
             }
 
-        }
+        //}
     }
 
     private void FixedUpdate()

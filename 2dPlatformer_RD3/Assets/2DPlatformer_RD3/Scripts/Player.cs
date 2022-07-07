@@ -1,8 +1,6 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityStandardAssets.CrossPlatformInput;
-using TarodevController;
+
 
 public class Player : MonoBehaviour
 {
@@ -13,8 +11,9 @@ public class Player : MonoBehaviour
     [SerializeField] private float jumpStopForce = 2.5f;
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
+    [SerializeField] private float inAirTurnTime = 2.1f;
     [SerializeField] private float climbSpeed = 3f;
-    //[SerializeField] private float gravity = 3.5f;
+ 
     [SerializeField] private Vector2 knockBackForce = new Vector2(10f, 15f);
 
 
@@ -24,20 +23,16 @@ public class Player : MonoBehaviour
     // Cache
     private Rigidbody2D rigidBody;
     private Animator animator;
-    private PolygonCollider2D bodyCollider;
-    //Trigger colliders
-    [SerializeField] private Collider2D feetCollider;
-    [SerializeField] private Collider2D headCollider;
-    [SerializeField] private Transform groundCheck;
-    //[SerializeField] private Collider2D frontCollider;
-    //[SerializeField] private Collider2D behindCollider;
+    private BoxCollider2D bodyCollider;
 
-    //private float playerGravity;
+    [SerializeField] private Transform groundCheck;
+
     private float currentJumpTime;
     private float coyoteTimeCounter;
     private float jumpBufferCounter;
     private bool isGrounded = false;
     private bool isBufferJumping;
+    private bool useSlowTurnInAir;
 
     private SpriteRenderer spriteRenderer;
 
@@ -45,8 +40,7 @@ public class Player : MonoBehaviour
     {
         rigidBody = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
-        bodyCollider = GetComponent<PolygonCollider2D>();
-        //playerGravity = rigidBody.gravityScale;
+        bodyCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
@@ -58,21 +52,31 @@ public class Player : MonoBehaviour
     }
     private void FixedUpdate()
     {
-        Run();
+        HorizontalMovement();
         //Climb();
         FlipSprite();
         
     }
 
     /// <summary>
-    /// Set the run speed according to the horizontal input axis
+    /// Set the run speed and horizontal jump speed according to the horizontal input axis
     /// </summary>
-    private void Run()
+    private void HorizontalMovement()
     {
         //TODO: Use only GetAxis when in air and changing direction!
-        float horizontalInput = IsGrounded() ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
+        //float horizontalInput = !useSlowTurnInAir ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
+        float horizontalInput = Input.GetAxisRaw("Horizontal");
 
-        rigidBody.velocity = new Vector2(horizontalInput*runSpeed, rigidBody.velocity.y);
+        if (IsGrounded())
+        {
+            rigidBody.velocity = new Vector2(horizontalInput * runSpeed, rigidBody.velocity.y);
+        }
+        else
+        {
+            float xSpeed = Mathf.MoveTowards(rigidBody.velocity.x, horizontalInput * runSpeed, inAirTurnTime);
+            rigidBody.velocity = new Vector2(xSpeed, rigidBody.velocity.y);
+        }
+        
 
         bool isMovingHorizontally = Mathf.Abs(rigidBody.velocity.x) > Mathf.Epsilon;
         animator.SetBool("Running", isMovingHorizontally);
@@ -83,6 +87,7 @@ public class Player : MonoBehaviour
         if (IsGrounded())
         {
             coyoteTimeCounter = coyoteTime;
+            DisableSlowTurnInAir();
         }
         else
         {
@@ -110,7 +115,6 @@ public class Player : MonoBehaviour
         if (Input.GetButtonUp("Jump") && rigidBody.velocity.y > 0f)
         {
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, rigidBody.velocity.y * 0.5f);
-
             coyoteTimeCounter = 0f;
         }
         /*
@@ -145,7 +149,8 @@ public class Player : MonoBehaviour
         isBufferJumping = false;
     }
 
-    private void Climb()
+
+    /*private void Climb()
     {
         rigidBody.bodyType = RigidbodyType2D.Dynamic;
         if (!feetCollider.IsTouchingLayers(LayerMask.GetMask("Climbable")))
@@ -174,18 +179,13 @@ public class Player : MonoBehaviour
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
             animator.SetBool("Climbing", false);
         }
-    }
+    }*/
 
     /// <summary> 
     /// Flips sprite if player moves horizontally
     /// </summary> 
     private void FlipSprite()
     {
-        /*bool isMovingHorizontally = Mathf.Abs(rigidBody.velocity.x) > Mathf.Epsilon;
-        if (isMovingHorizontally)
-        {
-            transform.localScale = new Vector2(Mathf.Sign(rigidBody.velocity.x), 1f);
-        }*/
         if (rigidBody.velocity.x < 0)
         {
             spriteRenderer.flipX = true;
@@ -205,8 +205,7 @@ public class Player : MonoBehaviour
         if (activePlayerCollider.IsTouchingLayers(LayerMask.GetMask("Enemy")))
         {
             KnockBack(collider.transform.localPosition);
-            Die();
-            
+            Die();   
         }
 
         if (activePlayerCollider.IsTouchingLayers(LayerMask.GetMask("Hazard")))
@@ -228,4 +227,6 @@ public class Player : MonoBehaviour
         animator.SetTrigger("Dead");
         FindObjectOfType<GameSession>().ProcessPlayerDeath();
     }
+
+    private void 
 }
