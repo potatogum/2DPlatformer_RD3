@@ -4,37 +4,56 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    // Config
+    [Header("Horizontal Movement")]
     [SerializeField] private float runSpeed = 5f;
+    [SerializeField] private bool useLerpRunSpeed = false;
+    [SerializeField] private float lerpRunSpeed = 1.8f;
+
+    [Header("Jump")]
     [SerializeField] private float jumpSpeed = 5f;
     [SerializeField] private float jumpTime = 1f;
     [SerializeField] private float jumpStopForce = 2.5f;
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
     [SerializeField] private float inAirTurnTime = 2.1f;
+    private float coyoteTimeCounter;
+    private float jumpBufferCounter;
+    private bool isBufferJumping;
+
+
+    [Header("Gravity")]
+    [SerializeField] private float gravityScale = 6.2f;
+    [SerializeField] private float fallMultiplier = 1.5f;
+    [SerializeField] private float fallMultiplierLerpSpeed = 2f;
+
+    [Header("Collision")]
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private Transform wallCheck;
+
+    [Header("The maybes")]
     [SerializeField] private float climbSpeed = 3f;
- 
     [SerializeField] private Vector2 knockBackForce = new Vector2(10f, 15f);
 
+
+    // GameObject related
+    private float absoluteScaleX;
 
     // State
     private bool isAlive = true;
 
-    // Cache
+    // Components
     private Rigidbody2D rigidBody;
     private Animator animator;
     private BoxCollider2D bodyCollider;
-
-    [SerializeField] private Transform groundCheck;
-
-    private float currentJumpTime;
-    private float coyoteTimeCounter;
-    private float jumpBufferCounter;
-    private bool isGrounded = false;
-    private bool isBufferJumping;
-    private bool useSlowTurnInAir;
-
     private SpriteRenderer spriteRenderer;
+
+    // Animation states
+    const string PLAYER_IDLE = "player_idle";
+    const string PLAYER_RUN = "player_run";
+    const string PLAYER_JUMP = "player_jump";
+    const string PLAYER_WALL_IDLE = "player_wall_idle";
+    const string PLAYER_WALL_CLIMB = "player_wall_climb";
+    private string currentState;
 
     private void Start()
     {
@@ -42,6 +61,7 @@ public class Player : MonoBehaviour
         animator = GetComponent<Animator>();
         bodyCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        absoluteScaleX = Mathf.Abs(transform.localScale.x);
     }
 
     private void Update()
@@ -53,9 +73,12 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {
         HorizontalMovement();
+        AddFallMultiplier();
         //Climb();
         FlipSprite();
-        
+        HandleAnimator();
+
+        if (IsTouchingWall()) Debug.Log("Touching");
     }
 
     /// <summary>
@@ -69,7 +92,15 @@ public class Player : MonoBehaviour
 
         if (IsGrounded())
         {
-            rigidBody.velocity = new Vector2(horizontalInput * runSpeed, rigidBody.velocity.y);
+            if (useLerpRunSpeed)
+            {
+                float xSpeed = Mathf.MoveTowards(rigidBody.velocity.x, horizontalInput * runSpeed, lerpRunSpeed);
+                rigidBody.velocity = new Vector2(xSpeed, rigidBody.velocity.y);
+            }
+            else
+            {
+                rigidBody.velocity = new Vector2(horizontalInput * runSpeed, rigidBody.velocity.y);
+            }
         }
         else
         {
@@ -77,9 +108,26 @@ public class Player : MonoBehaviour
             rigidBody.velocity = new Vector2(xSpeed, rigidBody.velocity.y);
         }
         
-
         bool isMovingHorizontally = Mathf.Abs(rigidBody.velocity.x) > Mathf.Epsilon;
-        animator.SetBool("Running", isMovingHorizontally);
+    }
+
+    private void HandleAnimator()
+    {
+        if (IsGrounded())
+        {
+            if (rigidBody.velocity.x == 0) ChangeAnimationState(PLAYER_IDLE);
+            else if (rigidBody.velocity.x != 0) ChangeAnimationState(PLAYER_RUN);
+        }
+        else
+        {
+            ChangeAnimationState(PLAYER_JUMP);
+        }
+    }
+    private void ChangeAnimationState(string newState)
+    {
+        if (currentState == newState) return; // prevent animation from interupting itself
+        animator.Play(newState);
+        currentState = newState;
     }
 
     private void Jump()
@@ -87,7 +135,6 @@ public class Player : MonoBehaviour
         if (IsGrounded())
         {
             coyoteTimeCounter = coyoteTime;
-            DisableSlowTurnInAir();
         }
         else
         {
@@ -117,29 +164,15 @@ public class Player : MonoBehaviour
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, rigidBody.velocity.y * 0.5f);
             coyoteTimeCounter = 0f;
         }
-        /*
-        if (input.GatherInput().JumpDown && isGrounded)
-        {
-            rigidBody.gravityScale = 0;
-            coyoteCounter = 0;
-            rigidBody.velocity += new Vector2(0, jumpSpeed);
- 
-            currentJumpTime = jumpTime;
-        }
-        else if(rigidBody.velocity.y > 0 && !input.GatherInput().JumpHeld)
-        {
-            rigidBody.gravityScale = gravity * jumpStopForce;
-        }
-        else
-        {
-            rigidBody.gravityScale = gravity;
-        }
-        */
     }
 
     private bool IsGrounded()
     {
         return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
+    }
+    private bool IsTouchingWall()
+    {
+        return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Ground"));
     }
 
     private IEnumerator BufferJumpCooldown()
@@ -187,12 +220,12 @@ public class Player : MonoBehaviour
     private void FlipSprite()
     {
         if (rigidBody.velocity.x < 0)
-        {
-            spriteRenderer.flipX = true;
+        {   //spriteRenderer.flipX = true;
+            transform.localScale = new Vector3(-absoluteScaleX, transform.localScale.y, 1);
         }
         else if (rigidBody.velocity.x > 0)
-        {
-            spriteRenderer.flipX = false;
+        {   //spriteRenderer.flipX = false;
+            transform.localScale = new Vector3(absoluteScaleX, transform.localScale.y, 1); 
         }
     }
 
@@ -228,5 +261,15 @@ public class Player : MonoBehaviour
         FindObjectOfType<GameSession>().ProcessPlayerDeath();
     }
 
-    private void 
+    private void AddFallMultiplier()
+    {
+        if (rigidBody.velocity.y < 0)
+        {
+            rigidBody.gravityScale = Mathf.MoveTowards(gravityScale, gravityScale * fallMultiplier, fallMultiplierLerpSpeed);
+        }
+        else
+        {
+            rigidBody.gravityScale = gravityScale;
+        }
+    }
 }
