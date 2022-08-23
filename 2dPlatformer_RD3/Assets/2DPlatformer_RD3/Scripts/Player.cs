@@ -9,6 +9,7 @@ public class Player : MonoBehaviour
     [SerializeField] private bool useLerpRunSpeed = false;
     [SerializeField] private float lerpRunSpeed = 1.8f;
 
+
     [Header("Jump")]
     [SerializeField] private float jumpSpeed = 5f;
     [SerializeField] private float jumpTime = 1f;
@@ -26,9 +27,16 @@ public class Player : MonoBehaviour
     [SerializeField] private float fallMultiplier = 1.5f;
     [SerializeField] private float fallMultiplierLerpSpeed = 2f;
 
+
+    [Header("Wall Climb")]
+    [SerializeField] private float slideSpeed = -3f;
+    private bool isSliding = false;
+
+
     [Header("Collision")]
     [SerializeField] private Transform groundCheck;
     [SerializeField] private Transform wallCheck;
+
 
     [Header("The maybes")]
     [SerializeField] private float climbSpeed = 3f;
@@ -51,8 +59,8 @@ public class Player : MonoBehaviour
     const string PLAYER_IDLE = "player_idle";
     const string PLAYER_RUN = "player_run";
     const string PLAYER_JUMP = "player_jump";
-    const string PLAYER_WALL_IDLE = "player_wall_idle";
-    const string PLAYER_WALL_CLIMB = "player_wall_climb";
+    const string PLAYER_WALL_GRAB = "player_wallGrab";
+    const string PLAYER_WALL_CLIMB = "player_wallClimb";
     private string currentState;
 
     private void Start()
@@ -74,11 +82,12 @@ public class Player : MonoBehaviour
     {
         HorizontalMovement();
         AddFallMultiplier();
+        WallClimb();
         //Climb();
         FlipSprite();
-        HandleAnimator();
 
-        if (IsTouchingWall()) Debug.Log("Touching");
+
+        HandleAnimator();
     }
 
     /// <summary>
@@ -120,7 +129,14 @@ public class Player : MonoBehaviour
         }
         else
         {
-            ChangeAnimationState(PLAYER_JUMP);
+            if (isSliding) {
+                ChangeAnimationState(PLAYER_WALL_GRAB);
+            }
+            else 
+            {
+                ChangeAnimationState(PLAYER_JUMP);
+            }
+           
         }
     }
     private void ChangeAnimationState(string newState)
@@ -165,7 +181,18 @@ public class Player : MonoBehaviour
             coyoteTimeCounter = 0f;
         }
     }
-
+    private void WallClimb() 
+    {
+        isSliding = false;
+        rigidBody.gravityScale = gravityScale;
+        if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0) 
+        {
+            isSliding = true;
+            rigidBody.gravityScale = 0;
+            rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);
+            //rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
+        }
+    }
     private bool IsGrounded()
     {
         return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));

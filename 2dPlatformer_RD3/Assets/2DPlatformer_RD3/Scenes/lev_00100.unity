@@ -986,6 +986,7 @@ MonoBehaviour:
   gravityScale: 5
   fallMultiplier: 1.7
   fallMultiplierLerpSpeed: 2.4
+  slideSpeed: -2.4
   groundCheck: {fileID: 1440844000}
   wallCheck: {fileID: 1668098523}
   climbSpeed: 3
