@@ -5,13 +5,13 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     [Header("Horizontal Movement")]
-    [SerializeField] private float runSpeed = 5f;
+    [SerializeField] private float runSpeed = 12f;
     [SerializeField] private bool useLerpRunSpeed = false;
     [SerializeField] private float lerpRunSpeed = 1.8f;
 
 
     [Header("Jump")]
-    [SerializeField] private float jumpSpeed = 5f;
+    [SerializeField] private float jumpSpeed = 19f;
     [SerializeField] private float jumpTime = 1f;
     [SerializeField] private float jumpStopForce = 2.5f;
     [SerializeField] private float coyoteTime = 0.1f;
@@ -21,16 +21,27 @@ public class Player : MonoBehaviour
     private float jumpBufferCounter;
     private bool isJumping;
 
+    [Header("WallJump")]
+    [SerializeField] private Vector2 wallJumpSpeed;
+    [SerializeField] private float wallJumpLockedBuffer = 0.24f;
+    private float wallJumpLockedTime;
+    private bool canMove = true;
 
     [Header("Gravity")]
     [SerializeField] private float gravityScale = 6.2f;
     [SerializeField] private float fallMultiplier = 1.5f;
     [SerializeField] private float fallMultiplierLerpSpeed = 2f;
-
-
+   
     [Header("Wall Climb")]
+    [SerializeField] private float climbSpeed = 12f;
+    private bool isWallClimbing = false;
+    [SerializeField] private float cannotGrapOrSlideBuffer = 0.3f;
+    private float cannotGrabOrSlideTime;
+    private bool canGrabOrSlide = true;
+
+    [Header("Wall Slide")]
     [SerializeField] private float slideSpeed = -3f;
-    private bool isSliding = false;
+    private bool isWallSliding = false;
 
 
     [Header("Collision")]
@@ -39,7 +50,7 @@ public class Player : MonoBehaviour
 
 
     [Header("The maybes")]
-    [SerializeField] private float climbSpeed = 3f;
+    //[SerializeField] private float climbSpeed = 3f;
     [SerializeField] private Vector2 knockBackForce = new Vector2(10f, 15f);
 
 
@@ -75,6 +86,8 @@ public class Player : MonoBehaviour
     private void Update()
     {
         if (!isAlive) { return; }
+        CanGrabOrSlideTimer();
+        WallSlide();
         WallClimb();
         Jump();
     }
@@ -86,7 +99,6 @@ public class Player : MonoBehaviour
         //Climb();
         FlipSprite();
 
-
         HandleAnimator();
     }
 
@@ -95,8 +107,10 @@ public class Player : MonoBehaviour
     /// </summary>
     private void HorizontalMovement()
     {
+        if (!canMove)
+            return;
+
         //TODO: Use only GetAxis when in air and changing direction!
-        //float horizontalInput = !useSlowTurnInAir ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
         float horizontalInput = Input.GetAxisRaw("Horizontal");
 
         if (IsGrounded())
@@ -111,7 +125,7 @@ public class Player : MonoBehaviour
                 rigidBody.velocity = new Vector2(horizontalInput * runSpeed, rigidBody.velocity.y);
             }
         }
-        else
+        else if (!isWallClimbing)
         {
             float xSpeed = Mathf.MoveTowards(rigidBody.velocity.x, horizontalInput * runSpeed, inAirTurnTime);
             rigidBody.velocity = new Vector2(xSpeed, rigidBody.velocity.y);
@@ -129,7 +143,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            if (isSliding) ChangeAnimationState(PLAYER_WALL_GRAB);
+            if (isWallSliding) ChangeAnimationState(PLAYER_WALL_GRAB);
             else           ChangeAnimationState(PLAYER_JUMP);
         }
     }
@@ -143,39 +157,131 @@ public class Player : MonoBehaviour
     // Based on: https://www.youtube.com/watch?v=RFix_Kg2Di0&list=PLcxXHZgunPikkxiHH_V50tVNVwaewrwNJ&index=4 for coyote time and jump buffer
     private void Jump()
     {
+        bool jumpBtnDown = Input.GetButtonDown("Jump");
+        float inputHorizontal = Input.GetAxisRaw("Horizontal");
+
         // Coyote Time is a bit of extra time to jump when leaving the ground
         coyoteTimeCounter = IsGrounded() ? coyoteTime : coyoteTimeCounter - Time.deltaTime;
-
         // Jump buffer enables you to press jump a bit before you land, then when you land the jump is executed
-        jumpBufferCounter = Input.GetButtonDown("Jump") ? jumpBufferTime : jumpBufferCounter -= Time.deltaTime;
+        jumpBufferCounter = jumpBtnDown ? jumpBufferTime : jumpBufferCounter -= Time.deltaTime;
 
-        // Initiate the jump
+
+        /** Initiate a normal jump */
         if (coyoteTimeCounter > 0f && jumpBufferCounter > 0f && !isJumping)
         {
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpSpeed);
             jumpBufferCounter = 0f;
             StartCoroutine(JumpCooldown()); // where isJumping is set
         }
-
-        // Shorten the jump
+        /** Shorten the jump */
         if (Input.GetButtonUp("Jump") && rigidBody.velocity.y > 0f)
         {
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, rigidBody.velocity.y * 0.5f);
             coyoteTimeCounter = 0f;
         }
-    }
-    private void WallClimb() 
-    {
-        isSliding = false;
-        rigidBody.gravityScale = gravityScale;
-        if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0) 
+
+
+        // Prevent WallGrab and WallSlide when jumping while grounded and touching the wall
+        if (IsPushing() && jumpBtnDown)
+            StartCannotGrabOrSlideTimer();
+
+
+        /** Wall slide jump */
+        if (jumpBtnDown && isWallSliding)
         {
-            isSliding = true;
-            rigidBody.gravityScale = 0;
-            rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);
-            //rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
+            wallJumpLockedTime = wallJumpLockedBuffer;
+            rigidBody.velocity = new Vector2(runSpeed * -inputHorizontal, jumpSpeed);
+        }
+        if (wallJumpLockedTime > 0)
+        {
+            wallJumpLockedTime -= Time.deltaTime;
+            canMove = false;
+        }
+        else
+        {
+            canMove = true;
+        }
+        // END Wall slide jump
+
+        /** Wall climb jump */
+        if (jumpBtnDown && isWallClimbing)
+        {
+            isWallClimbing = false ;
+            StartCannotGrabOrSlideTimer();
+            
+            rigidBody.velocity = new Vector2(runSpeed * inputHorizontal, jumpSpeed);
+        }
+        // END Wall climb jump
+    }
+    private bool IsTurningRight()
+    {
+        return transform.localScale.x > 0;
+    }
+
+    private bool IsPushing()
+    {
+        return (IsGrounded() && IsTouchingWall());
+    }
+
+    private void StartCannotGrabOrSlideTimer()
+    {
+        cannotGrabOrSlideTime = cannotGrapOrSlideBuffer;
+    }
+    /** A simple timer to disable wall slide and grabbing when the player is grounded and touching a wall,
+        enabling a normal jump straight up */
+    private void CanGrabOrSlideTimer()
+    {
+        if (cannotGrabOrSlideTime > 0)
+        {
+            canGrabOrSlide = false;
+            cannotGrabOrSlideTime -= Time.deltaTime;
+        }
+        else
+        {
+            canGrabOrSlide = true;
         }
     }
+
+    private void WallSlide() 
+    {
+        if (!canMove || isWallClimbing || !canGrabOrSlide)
+            return;
+
+        isWallSliding = false;
+        if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0 && !IsGrounded()) 
+        {
+            isWallSliding = true;
+            rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);
+        }
+    }
+
+    private void WallClimb()
+    {
+        if (!canGrabOrSlide) 
+            return;
+
+        // Checking if we are climbing or not - if we are, gravity is set to 0, etc.  
+        // (IsPushing() is here to prevent jump from being performed without gravity when holding "grab" key)
+        if (IsTouchingWall() && Input.GetButton("Grab") && !IsPushing()) 
+        {
+            isWallClimbing = true;
+            rigidBody.gravityScale = 0;
+            rigidBody.velocity = Vector2.zero;
+        }
+        else
+        {
+            isWallClimbing = false;
+            rigidBody.gravityScale = gravityScale; //This is set in WallSlide
+        }
+
+        // The climb movement, up and down.
+        if (isWallClimbing)
+        {
+            float velocityY = Input.GetAxisRaw("Vertical") * climbSpeed;
+            rigidBody.velocity = new Vector2(rigidBody.velocity.x, velocityY);
+        }
+    }
+
     private bool IsGrounded()
     {
         return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
@@ -193,37 +299,6 @@ public class Player : MonoBehaviour
         isJumping = false;
     }
 
-
-    /*private void Climb()
-    {
-        rigidBody.bodyType = RigidbodyType2D.Dynamic;
-        if (!feetCollider.IsTouchingLayers(LayerMask.GetMask("Climbable")))
-        {
-            animator.SetBool("Climbing", false);
-            animator.SetBool("OnLadder", false);
-            return;
-        }
-        
-        animator.SetBool("OnLadder", true);
-        float verticalMoveDirection = Input.GetAxisRaw("Vertical");
-        if (verticalMoveDirection != 0)
-        {
-            if (verticalMoveDirection < 0 && feetCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
-                return;
-            else if (verticalMoveDirection > 0 && headCollider.IsTouchingLayers(LayerMask.GetMask("Ground")))
-                return;
-
-            rigidBody.bodyType = RigidbodyType2D.Kinematic;
-            rigidBody.velocity = new Vector2(0, climbSpeed * verticalMoveDirection);//rigidBody.velocity.x
-            animator.SetBool("Climbing", true);
-        }
-        else
-        {
-            rigidBody.bodyType = RigidbodyType2D.Kinematic;
-            rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
-            animator.SetBool("Climbing", false);
-        }
-    }*/
 
     /// <summary> 
     /// Flips sprite if player moves horizontally
@@ -274,6 +349,8 @@ public class Player : MonoBehaviour
 
     private void AddFallMultiplier()
     {
+        if (isWallClimbing) return;
+
         if (rigidBody.velocity.y < 0)
         {
             rigidBody.gravityScale = Mathf.MoveTowards(gravityScale, gravityScale * fallMultiplier, fallMultiplierLerpSpeed);

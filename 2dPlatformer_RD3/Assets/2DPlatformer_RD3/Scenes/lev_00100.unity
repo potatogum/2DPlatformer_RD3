@@ -497,6 +497,37 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &179235155
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 179235156}
+  m_Layer: 0
+  m_Name: -----  BUGS  ------
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &179235156
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 179235155}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 48.44627, y: -6.4128537, z: 0.060387533}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 17
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &336052978
 GameObject:
   m_ObjectHideFlags: 0
@@ -983,13 +1014,16 @@ MonoBehaviour:
   coyoteTime: 0.12
   jumpBufferTime: 0.2
   inAirTurnTime: 2.1
+  wallJumpSpeed: {x: 12, y: 19}
+  wallJumpLockedBuffer: 0.24
   gravityScale: 5
   fallMultiplier: 1.7
   fallMultiplierLerpSpeed: 2.4
-  slideSpeed: -2.4
+  climbSpeed: 3
+  cannotGrapOrSlideBuffer: 0.3
+  slideSpeed: -1
   groundCheck: {fileID: 1440844000}
   wallCheck: {fileID: 1668098523}
-  climbSpeed: 3
   knockBackForce: {x: 10, y: 15}
 --- !u!61 &641653059
 BoxCollider2D:
@@ -36853,6 +36887,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2115927120942202228, guid: 00b64fe1021b1d048a748eefd32477ff, type: 3}
   m_PrefabInstance: {fileID: 734808682}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1352983045
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1352983046}
+  m_Layer: 0
+  m_Name: 'BUG: hold climb and  push into wall, keep pushing space'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1352983046
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1352983045}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 48.44627, y: -6.4128537, z: 0.060387533}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 18
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1390565199
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -37074,6 +37139,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 641653057}
   m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1842515193
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1842515194}
+  m_Layer: 0
+  m_Name: ---------------------
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1842515194
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1842515193}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 48.44627, y: -6.4128537, z: 0.060387533}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 16
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1848811037
 GameObject:
@@ -38036,7 +38132,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7339329315906885693, guid: d9b86aa6c9cc7244ca8fa84bec48cc19, type: 3}
       propertyPath: m_Lens.m_SensorSize.x
-      value: 1.7097791
+      value: 2.089983
       objectReference: {fileID: 0}
     - target: {fileID: 7339329315906885693, guid: d9b86aa6c9cc7244ca8fa84bec48cc19, type: 3}
       propertyPath: m_Lens.OrthographicSize
