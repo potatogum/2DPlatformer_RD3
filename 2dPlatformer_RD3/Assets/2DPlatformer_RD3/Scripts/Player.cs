@@ -19,7 +19,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float inAirTurnTime = 2.1f;
     private float coyoteTimeCounter;
     private float jumpBufferCounter;
-    private bool isBufferJumping;
+    private bool isJumping;
 
 
     [Header("Gravity")]
@@ -75,14 +75,14 @@ public class Player : MonoBehaviour
     private void Update()
     {
         if (!isAlive) { return; }
-
+        WallClimb();
         Jump();
     }
     private void FixedUpdate()
     {
         HorizontalMovement();
         AddFallMultiplier();
-        WallClimb();
+        
         //Climb();
         FlipSprite();
 
@@ -129,14 +129,8 @@ public class Player : MonoBehaviour
         }
         else
         {
-            if (isSliding) {
-                ChangeAnimationState(PLAYER_WALL_GRAB);
-            }
-            else 
-            {
-                ChangeAnimationState(PLAYER_JUMP);
-            }
-           
+            if (isSliding) ChangeAnimationState(PLAYER_WALL_GRAB);
+            else           ChangeAnimationState(PLAYER_JUMP);
         }
     }
     private void ChangeAnimationState(string newState)
@@ -146,35 +140,24 @@ public class Player : MonoBehaviour
         currentState = newState;
     }
 
+    // Based on: https://www.youtube.com/watch?v=RFix_Kg2Di0&list=PLcxXHZgunPikkxiHH_V50tVNVwaewrwNJ&index=4 for coyote time and jump buffer
     private void Jump()
     {
-        if (IsGrounded())
-        {
-            coyoteTimeCounter = coyoteTime;
-        }
-        else
-        {
-            coyoteTimeCounter -= Time.deltaTime;
-        }
+        // Coyote Time is a bit of extra time to jump when leaving the ground
+        coyoteTimeCounter = IsGrounded() ? coyoteTime : coyoteTimeCounter - Time.deltaTime;
 
-        if (Input.GetButtonDown("Jump")) 
-        {
-            jumpBufferCounter = jumpBufferTime;
-        }
-        else
-        {
-            jumpBufferCounter -= Time.deltaTime;
-        }
+        // Jump buffer enables you to press jump a bit before you land, then when you land the jump is executed
+        jumpBufferCounter = Input.GetButtonDown("Jump") ? jumpBufferTime : jumpBufferCounter -= Time.deltaTime;
 
-        if (coyoteTimeCounter > 0f && jumpBufferCounter > 0f && !isBufferJumping)
+        // Initiate the jump
+        if (coyoteTimeCounter > 0f && jumpBufferCounter > 0f && !isJumping)
         {
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpSpeed);
-
             jumpBufferCounter = 0f;
-
-            StartCoroutine(BufferJumpCooldown());
+            StartCoroutine(JumpCooldown()); // where isJumping is set
         }
 
+        // Shorten the jump
         if (Input.GetButtonUp("Jump") && rigidBody.velocity.y > 0f)
         {
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, rigidBody.velocity.y * 0.5f);
@@ -202,11 +185,12 @@ public class Player : MonoBehaviour
         return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Ground"));
     }
 
-    private IEnumerator BufferJumpCooldown()
+    // To prevent spamming the space key from making the character jump higher
+    private IEnumerator JumpCooldown()
     {
-        isBufferJumping = true;
+        isJumping = true;
         yield return new WaitForSeconds(0.4f);
-        isBufferJumping = false;
+        isJumping = false;
     }
 
 
