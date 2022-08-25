@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 /// This is a supplementary script to help with effects and animation. Basically a juice factory.
 /// </summary>
 namespace TarodevController {
-    public class PlayerAnimator : MonoBehaviour {
+    public class PlayerAnimator_tarodev : MonoBehaviour {
         [SerializeField] private Animator _anim;
         // bones' serialized variables
         [SerializeField] private bool _facingRight = true;
