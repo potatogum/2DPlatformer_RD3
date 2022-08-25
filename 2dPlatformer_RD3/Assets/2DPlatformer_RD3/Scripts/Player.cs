@@ -189,6 +189,7 @@ public class Player : MonoBehaviour
         /** Wall slide jump */
         if (jumpBtnDown && isWallSliding)
         {
+            isWallSliding = false;
             wallJumpLockedTime = wallJumpLockedBuffer;
             rigidBody.velocity = new Vector2(runSpeed * -inputHorizontal, jumpSpeed);
         }
@@ -228,7 +229,7 @@ public class Player : MonoBehaviour
         cannotGrabOrSlideTime = cannotGrapOrSlideBuffer;
     }
     /** A simple timer to disable wall slide and grabbing when the player is grounded and touching a wall,
-        enabling a normal jump straight up */
+        enabling a normal jump straight up. */
     private void CanGrabOrSlideTimer()
     {
         if (cannotGrabOrSlideTime > 0)
@@ -246,7 +247,7 @@ public class Player : MonoBehaviour
     {
         if (!canMove || isWallClimbing || !canGrabOrSlide)
             return;
-
+        
         isWallSliding = false;
         if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0 && !IsGrounded()) 
         {
@@ -261,8 +262,7 @@ public class Player : MonoBehaviour
             return;
 
         // Checking if we are climbing or not - if we are, gravity is set to 0, etc.  
-        // (IsPushing() is here to prevent jump from being performed without gravity when holding "grab" key)
-        if (IsTouchingWall() && Input.GetButton("Grab") && !IsPushing()) 
+        if (IsTouchingWall() && Input.GetButton("Grab") && !IsPushing()) // (IsPushing() is here to prevent jump from being performed without gravity when holding "grab" key)
         {
             isWallClimbing = true;
             rigidBody.gravityScale = 0;
@@ -291,7 +291,7 @@ public class Player : MonoBehaviour
         return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Ground"));
     }
 
-    // To prevent spamming the space key from making the character jump higher
+    /** Prevents spamming the space key from making the character jump higher. */
     private IEnumerator JumpCooldown()
     {
         isJumping = true;
@@ -300,9 +300,7 @@ public class Player : MonoBehaviour
     }
 
 
-    /// <summary> 
-    /// Flips sprite if player moves horizontally
-    /// </summary> 
+    /** Flips sprite if player moves horizontally */
     private void FlipSprite()
     {
         if (rigidBody.velocity.x < 0)

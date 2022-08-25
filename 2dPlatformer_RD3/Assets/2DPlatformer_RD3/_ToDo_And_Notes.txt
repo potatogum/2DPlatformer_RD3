@@ -1,0 +1,11 @@
+TODO:
+
+Wall Jump (WallClimb and WallSlide) (Player.cs):
+If 2 walls are close to each other, when jumping from one to the other, the player won't be able to grab or slide right away (canMove timer)
+
+
+
+
+
+
+NOTES:
