@@ -68,6 +68,7 @@ namespace Player
 
         // State
         private bool isAlive = true;
+        private bool isGrounded;
 
         // Components
         private Rigidbody2D rigidBody;
@@ -147,7 +148,9 @@ namespace Player
             // if (!isAlive) playerAnim.ChangeAnimationState(playerAnim.PLAYER_DEAD); // not created yet
             if (IsGrounded())
             {
-                if (rigidBody.velocity.x == 0) animationToPlay = playerAnim.PLAYER_IDLE;
+                Debug.Log(rigidBody.velocity.x);
+                //if (rigidBody.velocity.x == 0) animationToPlay = playerAnim.PLAYER_IDLE;
+                if (Mathf.Abs(rigidBody.velocity.x) < 0.01) animationToPlay = playerAnim.PLAYER_IDLE;
                 else if (rigidBody.velocity.x != 0) animationToPlay = playerAnim.PLAYER_RUN;
             }
             else
@@ -322,6 +325,7 @@ namespace Player
 
         private bool IsGrounded()
         {
+            isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
             return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
         }
         private bool IsTouchingWall()
