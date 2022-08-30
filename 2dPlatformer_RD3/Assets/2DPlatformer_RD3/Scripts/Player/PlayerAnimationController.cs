@@ -12,6 +12,7 @@ namespace Player
         public readonly string PLAYER_IDLE = "player_idle";
         public readonly string PLAYER_RUN = "player_run";
         public readonly string PLAYER_JUMP = "player_jump";
+        public readonly string PLAYER_WALL_SLIDE = "player_wallSlide";
         public readonly string PLAYER_WALL_GRAB = "player_wallGrab";
         public readonly string PLAYER_WALL_CLIMB = "player_wallClimb";
         private string currentState;

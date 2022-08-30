@@ -90,6 +90,7 @@ namespace Player
         {
             if (!isAlive || isDashing) { return; }
 
+            SetIsGrounded();
             CanGrabOrSlideTimer();
             WallSlide();
             WallClimb();
@@ -121,7 +122,7 @@ namespace Player
             //TODO: Use only GetAxis when in air and changing direction!
             float horizontalInput = Input.GetAxisRaw("Horizontal");
 
-            if (IsGrounded())
+            if (isGrounded)
             {
                 if (useLerpRunSpeed)
                 {
@@ -146,30 +147,29 @@ namespace Player
         {
             string animationToPlay = "";
             // if (!isAlive) playerAnim.ChangeAnimationState(playerAnim.PLAYER_DEAD); // not created yet
-            if (IsGrounded())
+            if (isGrounded)
             {
-                Debug.Log(rigidBody.velocity.x);
-                //if (rigidBody.velocity.x == 0) animationToPlay = playerAnim.PLAYER_IDLE;
                 if (Mathf.Abs(rigidBody.velocity.x) < 0.01) animationToPlay = playerAnim.PLAYER_IDLE;
                 else if (rigidBody.velocity.x != 0) animationToPlay = playerAnim.PLAYER_RUN;
             }
             else
             {
-                if (isWallSliding) animationToPlay = playerAnim.PLAYER_WALL_GRAB;
-                if (isWallClimbing) animationToPlay = playerAnim.PLAYER_WALL_CLIMB;
+                if (isWallClimbing && rigidBody.velocity.y != 0) animationToPlay = playerAnim.PLAYER_WALL_CLIMB;
+                else if (isWallClimbing) animationToPlay = playerAnim.PLAYER_WALL_GRAB;
+                else if (isWallSliding) animationToPlay = playerAnim.PLAYER_WALL_SLIDE;
                 else animationToPlay = playerAnim.PLAYER_JUMP;
             }
             playerAnim.ChangeAnimationState(animationToPlay);
         }
 
-        // Based on: https://www.youtube.com/watch?v=RFix_Kg2Di0&list=PLcxXHZgunPikkxiHH_V50tVNVwaewrwNJ&index=4 for coyote time and jump buffer
+        // Coyote time and jump buffer is based on: https://www.youtube.com/watch?v=RFix_Kg2Di0&list=PLcxXHZgunPikkxiHH_V50tVNVwaewrwNJ&index=4 
         private void Jump()
         {
             bool jumpBtnDown = Input.GetButtonDown("Jump");
             float inputHorizontal = Input.GetAxisRaw("Horizontal");
 
             // Coyote Time is a bit of extra time to jump when leaving the ground
-            coyoteTimeCounter = IsGrounded() ? coyoteTime : coyoteTimeCounter - Time.deltaTime;
+            coyoteTimeCounter = isGrounded ? coyoteTime : coyoteTimeCounter - Time.deltaTime;
             // Jump buffer enables you to press jump a bit before you land, then when you land the jump is executed
             jumpBufferCounter = jumpBtnDown ? jumpBufferTime : jumpBufferCounter -= Time.deltaTime;
 
@@ -225,7 +225,7 @@ namespace Player
 
         private void CheckDash()
         {
-            if (IsGrounded()) 
+            if (isGrounded) 
                 canDash = true;
 
             if (Input.GetButtonDown("Dash") && canDash)
@@ -262,7 +262,7 @@ namespace Player
 
         private bool IsPushing()
         {
-            return (IsGrounded() && IsTouchingWall());
+            return (isGrounded && IsTouchingWall());
         }
 
         private void StartCannotGrabOrSlideTimer()
@@ -290,7 +290,7 @@ namespace Player
                 return;
 
             isWallSliding = false;
-            if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0 && !IsGrounded())
+            if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0 && !isGrounded)
             {
                 isWallSliding = true;
                 rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);
@@ -323,10 +323,10 @@ namespace Player
             }
         }
 
-        private bool IsGrounded()
+        private void SetIsGrounded()
         {
             isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
-            return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
+            //return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
         }
         private bool IsTouchingWall()
         {
