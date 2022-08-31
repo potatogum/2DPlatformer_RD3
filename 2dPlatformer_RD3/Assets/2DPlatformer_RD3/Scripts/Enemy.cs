@@ -21,7 +21,7 @@ public class Enemy : MonoBehaviour
 
     private void FlipSprite()
     {
-        transform.localScale = new Vector2(-Mathf.Sign(transform.localScale.x), 1);
+        transform.localScale = new Vector2(-1 * transform.localScale.x, transform.localScale.y);
     }
 
     void FixedUpdate()

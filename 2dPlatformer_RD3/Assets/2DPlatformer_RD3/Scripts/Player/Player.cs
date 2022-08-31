@@ -69,6 +69,7 @@ namespace Player
         // State
         private bool isAlive = true;
         private bool isGrounded;
+        private bool isOnOneWayPlatform;
 
         // Components
         private Rigidbody2D rigidBody;
@@ -284,18 +285,37 @@ namespace Player
             }
         }
 
+        /*TODO: In IsTouchingWall() use localScale.x to check if it is right/left wall and store in variable. 
+                Then in Jump(), use the stored wall dir to decide which direction to jump after slide. */
+        private float wallSlideBuffer; // buffer time to be able to press opposite dir and still wall jump
         private void WallSlide()
+        {
+            if (!canMove || isWallClimbing || !canGrabOrSlide || isOnOneWayPlatform)
+                return;
+
+            if (IsTouchingWall()) 
+                wallSlideBuffer = 0.1f;
+            else 
+                wallSlideBuffer -= Time.deltaTime;
+
+            isWallSliding = false;
+            if (wallSlideBuffer > 0 && Input.GetAxisRaw("Horizontal") != 0 && !isGrounded)
+            {
+                isWallSliding = true;
+                rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);              
+            }
+        }
+        /*private void WallSlide()
         {
             if (!canMove || isWallClimbing || !canGrabOrSlide)
                 return;
 
-            isWallSliding = false;
             if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0 && !isGrounded)
             {
                 isWallSliding = true;
                 rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);
             }
-        }
+        }*/
 
         private void WallClimb()
         {
@@ -325,7 +345,7 @@ namespace Player
 
         private void SetIsGrounded()
         {
-            isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
+            isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, LayerMask.GetMask("Ground"));
             //return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
         }
         private bool IsTouchingWall()
@@ -370,6 +390,19 @@ namespace Player
             if (activePlayerCollider.IsTouchingLayers(LayerMask.GetMask("Hazard")))
             {
                 Die();
+            }
+
+            if (collider.gameObject.CompareTag("OneWayPlatform")) {
+                isOnOneWayPlatform = true;
+            }
+        }
+
+        private void OnCollisionExit2D(Collision2D collider)
+        {
+            if (!isAlive) { return; }
+
+            if (collider.gameObject.CompareTag("OneWayPlatform")) {
+                isOnOneWayPlatform = false;
             }
         }
 

@@ -1,8 +1,13 @@
 TODO:
 
+OneWayPlatform: 
+((Doesn't work when jumping left/right up. This is can be fixed as follows: Grabable walls must have their own layer like "Grabbable". Right now they are on the ground layer making the player script think it is sliding and therefor interrupting the platform effector.))
+Almost working now - using collider to check if it is a oneway platform - instead of using grabbable layer. Still hitting the platform on the side, sometimes fail to let the player through
+
+
+
 Wall Jump (WallClimb and WallSlide) (Player.cs):
 If 2 walls are close to each other, when jumping from one to the other, the player won't be able to grab or slide right away (canMove timer)
-
 
 
 
