@@ -351,7 +351,8 @@ namespace Player
         }
         private bool IsTouchingWall()
         {
-            return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Ground"));
+            //return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Ground"));
+            return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Climbable"));
         }
 
         /** Prevents spamming the space key from making the character jump higher. */
