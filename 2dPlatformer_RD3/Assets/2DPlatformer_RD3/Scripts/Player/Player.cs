@@ -346,6 +346,7 @@ namespace Player
         private void SetIsGrounded()
         {
             isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, LayerMask.GetMask("Ground"));
+            //isOnOneWayPlatform = Physics2D.OverlapCircle(groundCheck.position, 0.1f, LayerMask.GetMask("OneWayPlatform"));
             //return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
         }
         private bool IsTouchingWall()
@@ -400,7 +401,7 @@ namespace Player
         private void OnCollisionExit2D(Collision2D collider)
         {
             if (!isAlive) { return; }
-
+        
             if (collider.gameObject.CompareTag("OneWayPlatform")) {
                 isOnOneWayPlatform = false;
             }
