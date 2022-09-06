@@ -70,6 +70,8 @@ namespace Player
         private bool isAlive = true;
         private bool isGrounded;
         private bool isOnOneWayPlatform;
+        private bool isTouchingWall;
+        private int lastWallSlideDirection; // -1: left, 1: right
 
         // Components
         private Rigidbody2D rigidBody;
@@ -92,6 +94,8 @@ namespace Player
             if (!isAlive || isDashing) { return; }
 
             SetIsGrounded();
+            SetIsTouchingWall();
+
             CanGrabOrSlideTimer();
             WallSlide();
             WallClimb();
@@ -195,12 +199,13 @@ namespace Player
                 StartCannotGrabOrSlideTimer();
 
 
-            /** Wall slide jump */
+            #region WALL SLIDE JUMP
             if (jumpBtnDown && isWallSliding)
             {
                 isWallSliding = false;
                 wallJumpLockedTime = wallJumpLockedBuffer;
-                rigidBody.velocity = new Vector2(runSpeed * -inputHorizontal, jumpSpeed);
+                //rigidBody.velocity = new Vector2(runSpeed * -inputHorizontal, jumpSpeed);
+                rigidBody.velocity = new Vector2(runSpeed * -lastWallSlideDirection, jumpSpeed);
             }
             if (wallJumpLockedTime > 0)
             {
@@ -211,9 +216,9 @@ namespace Player
             {
                 canMove = true;
             }
-            // END Wall slide jump
+            #endregion WALL SLIDE JUMP
 
-            /** Wall climb jump */
+            #region WALL CLIMB JUMP
             if (jumpBtnDown && isWallClimbing)
             {
                 isWallClimbing = false;
@@ -221,7 +226,7 @@ namespace Player
 
                 rigidBody.velocity = new Vector2(runSpeed * inputHorizontal, jumpSpeed);
             }
-            // END Wall climb jump
+            #endregion WALL CLIMB JUMP
         } 
 
         private void CheckDash()
@@ -263,7 +268,7 @@ namespace Player
 
         private bool IsPushing()
         {
-            return (isGrounded && IsTouchingWall());
+            return (isGrounded && isTouchingWall);
         }
 
         private void StartCannotGrabOrSlideTimer()
@@ -293,8 +298,8 @@ namespace Player
             if (!canMove || isWallClimbing || !canGrabOrSlide || isOnOneWayPlatform)
                 return;
 
-            if (IsTouchingWall()) 
-                wallSlideBuffer = 0.1f;
+            if (isTouchingWall) 
+                wallSlideBuffer = 0.18f;
             else 
                 wallSlideBuffer -= Time.deltaTime;
 
@@ -305,17 +310,6 @@ namespace Player
                 rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);              
             }
         }
-        /*private void WallSlide()
-        {
-            if (!canMove || isWallClimbing || !canGrabOrSlide)
-                return;
-
-            if (IsTouchingWall() && Input.GetAxisRaw("Horizontal") != 0 && !isGrounded)
-            {
-                isWallSliding = true;
-                rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);
-            }
-        }*/
 
         private void WallClimb()
         {
@@ -323,7 +317,7 @@ namespace Player
                 return;
 
             // Checking if we are climbing or not - if we are, gravity is set to 0, etc.  
-            if (IsTouchingWall() && Input.GetButton("Grab") && !IsPushing()) // (IsPushing() is here to prevent jump from being performed without gravity when holding "grab" key)
+            if (isTouchingWall && Input.GetButton("Grab") && !IsPushing()) // (IsPushing() is here to prevent jump from being performed without gravity when holding "grab" key)
             {
                 isWallClimbing = true;
                 rigidBody.gravityScale = 0;
@@ -349,17 +343,20 @@ namespace Player
             //isOnOneWayPlatform = Physics2D.OverlapCircle(groundCheck.position, 0.1f, LayerMask.GetMask("OneWayPlatform"));
             //return Physics2D.OverlapCircle(groundCheck.position, 0.2f, LayerMask.GetMask("Ground"));
         }
-        private bool IsTouchingWall()
+        private void SetIsTouchingWall()
         {
-            //return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Ground"));
-            return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Climbable"));
+            //return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Climbable")); //LayerMask.GetMask("Ground"));
+            isTouchingWall = Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Climbable")); //LayerMask.GetMask("Ground"));
+            if (isTouchingWall) {
+                lastWallSlideDirection = IsTurningRight() ? 1 : -1;
+            }
         }
 
         /** Prevents spamming the space key from making the character jump higher. */
         private IEnumerator JumpCooldown()
         {
             isJumping = true;
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(0.2f);
             isJumping = false;
         }
 
