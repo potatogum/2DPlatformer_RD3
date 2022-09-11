@@ -96,7 +96,7 @@ namespace Player
             SetIsGrounded();
             SetIsTouchingWall();
 
-            CanGrabOrSlideTimer();
+            CannotGrabOrSlideTimer();
             WallSlide();
             WallClimb();
             Jump();
@@ -204,7 +204,6 @@ namespace Player
             {
                 isWallSliding = false;
                 wallJumpLockedTime = wallJumpLockedBuffer;
-                //rigidBody.velocity = new Vector2(runSpeed * -inputHorizontal, jumpSpeed);
                 rigidBody.velocity = new Vector2(runSpeed * -lastWallSlideDirection, jumpSpeed);
             }
             if (wallJumpLockedTime > 0)
@@ -223,7 +222,6 @@ namespace Player
             {
                 isWallClimbing = false;
                 StartCannotGrabOrSlideTimer();
-
                 rigidBody.velocity = new Vector2(runSpeed * inputHorizontal, jumpSpeed);
             }
             #endregion WALL CLIMB JUMP
@@ -277,7 +275,7 @@ namespace Player
         }
         /** A simple timer to disable wall slide and grabbing when the player is grounded and touching a wall,
             enabling a normal jump straight up. */
-        private void CanGrabOrSlideTimer()
+        private void CannotGrabOrSlideTimer()
         {
             if (cannotGrabOrSlideTime > 0)
             {
@@ -298,7 +296,9 @@ namespace Player
             if (!canMove || isWallClimbing || !canGrabOrSlide || isOnOneWayPlatform)
                 return;
 
-            if (isTouchingWall) 
+            if (isGrounded)
+                wallSlideBuffer = 0f;
+            else if (isTouchingWall) 
                 wallSlideBuffer = 0.18f;
             else 
                 wallSlideBuffer -= Time.deltaTime;
@@ -346,7 +346,7 @@ namespace Player
         private void SetIsTouchingWall()
         {
             //return Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Climbable")); //LayerMask.GetMask("Ground"));
-            isTouchingWall = Physics2D.OverlapCircle(wallCheck.position, 0.2f, LayerMask.GetMask("Climbable")); //LayerMask.GetMask("Ground"));
+            isTouchingWall = Physics2D.OverlapCircle(wallCheck.position, 0.1f, LayerMask.GetMask("Climbable")); //LayerMask.GetMask("Ground"));
             if (isTouchingWall) {
                 lastWallSlideDirection = IsTurningRight() ? 1 : -1;
             }
