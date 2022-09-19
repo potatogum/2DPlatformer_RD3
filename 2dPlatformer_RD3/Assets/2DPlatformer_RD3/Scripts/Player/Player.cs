@@ -50,6 +50,7 @@ namespace Player
 
         [Header("Wall Slide")]
         [SerializeField] private float slideSpeed = -3f;
+        [SerializeField] private float wallSlideBufferTime = 0.2f; 
         private bool isWallSliding = false;
 
 
@@ -293,18 +294,16 @@ namespace Player
         private float wallSlideBuffer; // buffer time to be able to press opposite dir and still wall jump
         private void WallSlide()
         {
-            if (!canMove || isWallClimbing || !canGrabOrSlide || isOnOneWayPlatform)
+            /* Handle wallSlideBuffer (must be done before the "return" check below) */
+            if (isGrounded) wallSlideBuffer = 0f;
+            else if (isTouchingWall) wallSlideBuffer =  wallSlideBufferTime;
+            else  wallSlideBuffer -= Time.deltaTime;
+
+            if (!canMove || isWallClimbing || !canGrabOrSlide || isOnOneWayPlatform)
                 return;
 
-            if (isGrounded)
-                wallSlideBuffer = 0f;
-            else if (isTouchingWall) 
-                wallSlideBuffer = 0.18f;
-            else 
-                wallSlideBuffer -= Time.deltaTime;
-
             isWallSliding = false;
-            if (wallSlideBuffer > 0 && Input.GetAxisRaw("Horizontal") != 0 && !isGrounded)
+            if (wallSlideBuffer > 0 && Input.GetAxisRaw("Horizontal") != 0) // && !isGrounded) NOT NEEDED isGrounded -> wallSlideBuffer = 0
             {
                 isWallSliding = true;
                 rigidBody.velocity = new Vector2(rigidBody.velocity.x, slideSpeed);              

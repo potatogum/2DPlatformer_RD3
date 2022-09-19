@@ -1102,6 +1102,7 @@ MonoBehaviour:
   climbSpeed: 3
   cannotGrapOrSlideBuffer: 0.3
   slideSpeed: -1
+  wallSlideBufferTime: 0.13
   groundCheck: {fileID: 1440844000}
   wallCheck: {fileID: 1668098523}
   knockBackForce: {x: 10, y: 15}
